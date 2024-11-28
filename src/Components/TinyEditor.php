@@ -249,7 +249,7 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained, Cont
                 $filename =
                     $this->getFileAttachmentsDirectory() . "/" . $matches[1];
 
-                $refresh_link = Storage::disk(
+                $refresh_link = \Storage::disk(
                     $this->getFileAttachmentsDiskName()
                 )->temporaryUrl($filename, now()->addMinutes(5));
             }
@@ -269,13 +269,10 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained, Cont
             if (!$state) {
                 $component->state("<p></p>");
             }
-            // if (
-            //     config("filament-tiptap-editor.visibility") === "private" &&
-            //     $state
-            // ) {
-            $component->state($this->refreshTemporaryURL($state));
-            //$component->state("teste");
-            // }
+            if ($this->getFileAttachmentsVisibility() === "private" && $state) {
+                $component->state($this->refreshTemporaryURL($state));
+                //$component->state("teste");
+            }
         });
     }
 }
