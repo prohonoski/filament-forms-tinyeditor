@@ -229,4 +229,53 @@ class TinyEditor extends Field implements Contracts\CanBeLengthConstrained, Cont
 
         return '';
     }
+    protected function refreshTemporaryURL(string|null $html): string
+    {
+        $refres_html = $html ?? "";
+        $identificador =
+            $this->getFileAttachmentsDiskName() .
+            "\/temp\/" .
+            $this->getFileAttachmentsDirectory();
+        $pattern = '/<img src="([^"]*\/' . $identificador . '[^"]*)"/';
+        preg_match_all($pattern, $html, $matches);
+        $result = $matches[0];
+        foreach ($result as $item) {
+            preg_match('/<img src="([^"]+)"/', $item, $matches);
+            if (is_array($matches)) {
+                $link_orig = $matches[1];
+            }
+            preg_match("/\/([^\/?]+)\?/", $item, $matches);
+            if (is_array($matches)) {
+                $filename =
+                    $this->getFileAttachmentsDirectory() . "/" . $matches[1];
+
+                $refresh_link = Storage::disk(
+                    $this->getFileAttachmentsDiskName()
+                )->temporaryUrl($filename, now()->addMinutes(5));
+            }
+            $refres_html = str_replace($link_orig, $refresh_link, $refres_html);
+        }
+        return $refres_html;
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->afterStateHydrated(function (
+            TinyEditor $component,
+            string|array|null $state
+        ) {
+            if (!$state) {
+                $component->state("<p></p>");
+            }
+            // if (
+            //     config("filament-tiptap-editor.visibility") === "private" &&
+            //     $state
+            // ) {
+            $component->state($this->refreshTemporaryURL($state));
+            //$component->state("teste");
+            // }
+        });
+    }
 }
